@@ -21,6 +21,10 @@ jobs:
 
       - name: Sync upstream changes
         run: |
+          # 0. 配置 git 提交者身份（创建合并提交必需，否则报 "Committer identity unknown"）
+          git config user.name "aifeifei798"
+          git config user.email "aifeifei7@outlook.com"
+
           # 1. 配置原作者上游仓库地址
           git remote add upstream https://github.com/anomalyco/opencode.git || true
           git fetch upstream

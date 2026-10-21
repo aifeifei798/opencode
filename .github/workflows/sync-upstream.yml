@@ -1,0 +1,28 @@
+name: Sync Upstream
+
+# 每天 08:00 UTC 把上游 anomalyco/opencode 的 dev 分支合并进本 fork 的 dev。
+# fork 上只有这一个文件是自定义的，正常不会冲突；真出现冲突时这次运行会报红，
+# 需要人工处理（不会破坏历史）。也可以随时在 Actions 页面手动点 Run workflow。
+
+on:
+  schedule:
+    - cron: "0 8 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Merge upstream dev
+        run: |
+          git remote add upstream https://github.com/anomalyco/opencode.git
+          git fetch upstream dev
+          git merge --no-edit upstream/dev || { git merge --abort; exit 1; }
+      - name: Push
+        run: git push origin dev

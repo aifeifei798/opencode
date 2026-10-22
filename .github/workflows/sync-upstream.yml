@@ -12,6 +12,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: sync-upstream
+  cancel-in-progress: false
+
 jobs:
   sync:
     runs-on: ubuntu-latest
@@ -21,8 +25,16 @@ jobs:
           fetch-depth: 0
       - name: Merge upstream dev
         run: |
-          git remote add upstream https://github.com/anomalyco/opencode.git
+          # CI runner 没有默认身份，合并提交会因 "empty ident name" 直接失败（exit 128）
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add upstream https://github.com/anomalyco/opencode.git \
+            || git remote set-url upstream https://github.com/anomalyco/opencode.git
           git fetch upstream dev
-          git merge --no-edit upstream/dev || { git merge --abort; exit 1; }
+          if ! git merge --no-edit upstream/dev; then
+            echo "::error::合并上游 dev 失败（冲突或身份问题），已中止，未推送任何内容"
+            git merge --abort || true
+            exit 1
+          fi
       - name: Push
         run: git push origin dev
